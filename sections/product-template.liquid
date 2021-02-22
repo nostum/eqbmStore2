@@ -284,13 +284,13 @@
 
           {%- if section.settings.description_below_add_to_cart -%}
             <div class="ProductMeta__Description">
-              <div class="Rte">
                 {%- comment -%}
+              <div class="Rte">
                 We have figured out that some merchants were copy-pasting huge chunk of code into the product description,
                 which can make the theme crashes if it contains some special attributes used by the theme. We therefore make sure to process this
-                {%- endcomment -%}
 
                 {{ product.description | replace: 'data-section-type', 'data-section-type-placeholder' }}
+                {%- endcomment -%}
               </div>
 
               {%- if section.settings.show_share_buttons -%}
