@@ -1,4 +1,4 @@
-password: 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
+password: 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
 
 store: https://equilibriumtestinglab.myshopify.com
 
