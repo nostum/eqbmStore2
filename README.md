@@ -5,6 +5,7 @@ theme_id: "81711431749"
 store: https://equilibriumproject.myshopify.com
 
 Pasos:
+
 1.- Instalar Shopify Theme Kit:
 
 https://shopify.dev/tools/theme-kit/getting-started
