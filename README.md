@@ -16,7 +16,7 @@ theme configure --password=[your-api-password] --store=[your-store.myshopify.com
 
 https://www.shopify.com/partners/shopify-cheat-sheet
 
-**4.- Añadir comportamiento Sticky al botón de "Añadir al carrito". Sólo para viewports menores a 1008 px.**
+**4.- Añadir comportamiento similar a Sticky al botón de "Añadir al carrito". Sólo para viewports menores a 1008 px.**
 
 **6.- Subir los cambios en un branch con tu primer nombre de título.**
 
