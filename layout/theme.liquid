@@ -175,6 +175,130 @@
       </main>
 
       {% section 'footer' %}
+
+       {% comment %} Refactored version {% endcomment %}
+    <script>
+      const ShopifyCartURLs = [
+  "/cart/add",
+  "/cart/update",
+  "/cart/change",
+  "/cart/clear",
+  "/cart/add.js",
+  "/cart/update.js",
+  "/cart/change.js",
+  "/cart/clear.js"
+];
+
+function isShopifyCartURL(url) {
+  if (!url) return false;
+  const path = url.split("/").pop();
+  return ShopifyCartURLs.includes(`/cart/${path}`);
+}
+
+//shopify api interacts with stringify payload
+//this functions parse payload into json
+function parsePayload(payloadString) {
+  if (payloadString.hasOwnProperty("body")) {
+    return JSON.parse(payloadString.body);
+  }
+  return null;
+}
+
+// checks if request is increasing items or adding items as far those are the only two options
+// to add items in shopify.
+//functions check which of the two possible addition items is being called in fetch 
+function isAddRequest(payloadString, cartItems, productLimit) {
+  console.log(payloadString)
+  const parsedPayload = parsePayload(payloadString);
+  if (parsedPayload) {
+    if (parsedPayload.hasOwnProperty("line")) {
+      const itemLinePosition = parseInt(parsedPayload.line);
+      const itemId = cartItems[itemLinePosition - 1].id;
+      const itemLimit = productLimit.find(el => el[itemId])[itemId].qty;
+      const cartItemIndex = cartItems.findIndex(ci => ci.id === itemId);
+      if (parsedPayload.quantity > itemLimit) {
+        window.initialShopifyCart.items[cartItemIndex].quantity += 1;
+      } else {
+        window.initialShopifyCart.items[cartItemIndex].quantity = parsedPayload.quantity;
+      }
+      return parsedPayload.quantity > itemLimit;
+    } else if (parsedPayload.hasOwnProperty("id") && cartItems.length) {
+      console.log("parsedPayload", parsedPayload);
+      const itemId = parseInt(parsedPayload.id);
+      const itemLimit = productLimit.find(i => i[itemId])[itemId].qty;
+      console.log(cartItems ,cartItems.find(e => e.id === itemId) !== undefined)
+      let itemCurrentQuantity
+      if(cartItems.find(e => e.id === itemId) !== undefined){
+        itemCurrentQuantity = cartItems.find(e => e.id === itemId).quantity
+      }else itemCurrentQuantity = 0
+      const cartItemIndex = cartItems.findIndex(ci => ci.id === itemId);
+      console.log(cartItemIndex)
+      cartItemIndex !== -1 ? window.initialShopifyCart.items[cartItemIndex].quantity += 1 : null
+      return itemCurrentQuantity + 1> itemLimit;
+    }
+  }
+  return false;
+}
+
+
+//this is our mock. Limits are setting in global variable to be accessible for all the functions
+//that references this variable
+window.productLimit = [
+  { 40120376459450: { qty: 2, isLimited: false } },
+  { 40120367186106: { qty: 3, isLimited: false } }
+];
+  
+
+// gets the last cart state and sets the data in a global variable in order to handle data
+// depending in requests and user cart interactions
+//this is executed in the window load
+  function getLastCartState() {
+    fetch(`${window.location.origin}/cart.js`)
+      .then(res =>
+        res.json().then(data => {
+          const localcart = data;
+          console.log("localCart", localcart);
+          window.initialShopifyCart = localcart;
+        })
+      );
+  }
+  
+  window.addEventListener("load", getLastCartState);
+  
+  //customize fetch in order to intercept and handle responses related to Shopify Cart
+  //this just have effect on add/change requests and returns original fetch method
+  //for other requests
+  function fetchOverride() {
+    if (!window.fetch || typeof window.fetch !== "function") return;
+  
+    const originalFetch = window.fetch;
+    window.fetch = function() {
+      let response;
+  
+      if (
+        isShopifyCartURL(arguments[0]) &&
+        arguments.length > 1 &&
+        isAddRequest(arguments[1], window.initialShopifyCart.items, window.productLimit)
+      ) {
+        console.log("arguments", arguments);
+        return Promise.resolve({
+          status: 400,
+          json: () =>
+            Promise.resolve({
+              status: 422,
+              message:"Cart Error",
+              description: "You cannot add more than the maximum allowed quantity to the cart."
+            })
+        });
+      }
+        else response = originalFetch.apply(this, arguments)
+        return response;
+    };
+  }
+  
+  fetchOverride();
+    </script>
+    {% comment %} Ends limiter script {% endcomment %}
     </div>
   </body>
 </html>
