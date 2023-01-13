@@ -29,7 +29,7 @@ const ShopifyCartURLs = [
     
     const storeName = 'equilibriumtestinglab';
     const productId = '40120367186106';
-    const saccesstoken = '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'
+    const saccesstoken = 'xxxxxxxxxxxxxxxx'
     
     const items = lastCart
     console.log("itemsxd", items)
