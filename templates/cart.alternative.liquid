@@ -1,0 +1,14 @@
+{% layout none %}
+
+
+
+{
+    "metafields": [
+    {%- for item in cart.items -%}
+        {
+            "{{ item.variant.id }}": {"qty": {{ item.variant.metafields.custom.customlimit | json }}}
+        }
+        {% unless forloop.last %},{% endunless %}
+    {%- endfor -%}
+    ]
+} 
