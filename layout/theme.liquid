@@ -122,6 +122,7 @@
     </script>
 
     {% render 'microdata-schema' %}
+    <script src="{{ 'cartlimiter-script.js' | asset_url }}" async></script>
   </head>
 
   {%- capture classes -%}features--heading-{{ settings.heading_size }}{%- endcapture -%}
@@ -177,7 +178,7 @@
       {% section 'footer' %}
     </div>
 
-    <script src="{{ 'cartlimiter-script.js' | asset_url }}" defer></script>
+    
     
     {% comment %} /*html for modal*/ {% endcomment %}
 
@@ -185,6 +186,15 @@
       <div class="modal-content" >
         <span onclick="closeModal()" id="closeBtn" class="close">&times;</span>
         <p>You've added maximum quantity for this item.</p>
+        </div>
+      
+    </div>
+
+    {% comment %} Html for reset alert {% endcomment %}
+    <div id="reset-alert" class="modal">
+      <div class="modal-content" >
+        <span onclick="closeResetAlert()" id="closeAlert" class="close">&times;</span>
+        <p>Some items in yor cart have been updated</p>
         </div>
       
     </div>

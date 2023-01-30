@@ -24,27 +24,63 @@ const ShopifyCartURLs = [
   return null;
   }
   
+  async function resetCart (){
+  
+    console.log("resetcart execution")
+    if (window.productLimit?.length && window.initialShopifyCart?.items?.length){
+      
+      const localcart = window.initialShopifyCart.items;
+      const productLimits = window.productLimit;
+      let promises = []
+      for (item of localcart){
+       let limit = !!productLimits.find(i => i[item.variant_id]) ? productLimits.find(i => i[item.variant_id])[item.variant_id].qty : 99;
+       if(item.quantity <= limit){
+        console.log(item)
+        continue
+       }
+       else{
+        let index = localcart.findIndex(el=>el.variant_id === item.variant_id)
+        console.log('index', index)
+        let bodypayload = {};
+        bodypayload.line = index + 1;
+        bodypayload.quantity = limit;
+        //if(itemsToChange.length >1){
+          promises.push(
+            await fetch(`${window.location.origin}/cart/change.js`,{
+            body: JSON.stringify({line: bodypayload.line, quantity: bodypayload.quantity }),
+            credentials:"same-origin",
+            headers:{'Content-Type': 'application/json', 'X-Resquested-With':'XMLHttpRequest'},
+            method:'POST',
+            }).then(res=>res.json().then(data=>console.log("done",data)))
+          )
+       }
+      }
+      if(promises.length){
+        Promise.all(promises).then(() => {
+          let alert = document.getElementById('reset-alert')
+          alert.style.display = 'flex'
+          
+      });
+      }
+    }
+  }
   
   function getMetafieldLimits() {
-  
+
     fetch(`${window.location.origin}/cart?view=alternative`)
     .then(res=>
       res.json().then(data=>{
         console.log("metas", data)
         window.productLimit = data.metafields
         console.log(window.productLimit)
-      })
+      }).then(()=>resetCart())
       )
-    
-  
-  
-  }//
+  }
   
   // checks if request is increasing items or adding items as far those are the only two options
   // to add items in shopify.
   //functions check which of the two possible addition items is being called in fetch 
   function isAddRequest(payloadString, cartItems, productLimit) {
-  console.log(payloadString)
   const parsedPayload = parsePayload(payloadString);
   if (parsedPayload) {
     //all cart request differents to Add.js recieves a payload object with the properties
@@ -76,9 +112,7 @@ const ShopifyCartURLs = [
     itemCurrentQuantity = cartItems.find(e => e.id === itemId).quantity
   }else itemCurrentQuantity = 0
   const cartItemIndex = cartItems.findIndex(ci => ci.id === itemId);
-  console.log(cartItemIndex)
   cartItemIndex !== -1 ? window.initialShopifyCart.items[cartItemIndex].quantity += 1 : window.initialShopifyCart.items.unshift({variant_id:itemId, quantity:1, id:itemId})
-  console.log("enter 81")
   //using settimeout to allow add.js promise resolve and then fetch last cart state metafields
   // fetching metafields without settimeout return an empty metafields array even if items were add
   setTimeout(getMetafieldLimits,700)
@@ -87,13 +121,6 @@ const ShopifyCartURLs = [
   }else if(parsedPayload.hasOwnProperty("id") && !cartItems.length){
   const itemId = parseInt(parsedPayload.id);
   window.initialShopifyCart.items.unshift({id:itemId, variant_id:itemId, quantity:1})
-  console.log("enter 87")
-  console.log("87",window.initialShopifyCart.items)
-  window.dispatchEvent(new CustomEvent("Shopify-add",{
-    detail:{
-      name:'added-product'
-    }
-  }))
   setTimeout(getMetafieldLimits,700)
   // getMetafieldLimits(window.initialShopifyCart.items)
   }
@@ -108,23 +135,17 @@ const ShopifyCartURLs = [
   // depending in requests and user cart interactions
   //this is executed in the window load
   function getLastCartState() {
-  fetch(`${window.location.origin}/cart.js`)
-  .then(res =>
-    res.json().then(data => {
-      const localcart = data;
-      console.log("localCart", localcart);
-      window.initialShopifyCart = localcart;
+    fetch(`${window.location.origin}/cart.js`)
+    .then(res =>res.json())
+    .then(data => {
+        const localcart = data;
+        console.log("localCart", localcart);
+        window.initialShopifyCart = localcart;
+        getMetafieldLimits(localcart.items)
+      }
+      )
+    }
   
-      //
-      
-  getMetafieldLimits(localcart.items)
-  //
-    })
-  );
-  }
-  window.addEventListener("Shopify-add",()=>{
-    console.log("fired by listener")
-  })
   window.addEventListener("load", getLastCartState);
   
   //customize fetch in order to intercept and handle responses related to Shopify Cart
@@ -183,4 +204,10 @@ const ShopifyCartURLs = [
   function closeModal() {
   let modal = document.getElementById("myModal");
   modal.style.display = "none";
+  }
+
+  function closeResetAlert(){
+    let alert = document.getElementById('reset-alert')
+    alert.style.display = 'none';
+    window.location.reload()
   }
